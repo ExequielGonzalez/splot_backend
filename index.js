@@ -45,8 +45,8 @@ app
   .get(async function (req, res) {
     var id = req.params.id;
     console.log(id);
-    console.log(Constants.CAMERAS_IP[id]);
-    photoRequest(Constants.CAMERAS_IP[id], function (err, result) {
+
+    photoRequest(id, function (err, result) {
       if (err) {
         // res.send(500, { error: "something blew up" });
         res.status(500).send({ error: "something blew up" });
@@ -143,48 +143,29 @@ app.use(function (req, res, next) {
   };
   res.status(404).send(response);
 });
-app.listen(3000, () => {
+app.listen(3000, "localhost", () => {
   console.log("El servidor está inicializado en el puerto 3000");
 });
 
-// ip = 192.168.43.222
-// async function photoRequest(ip) {
-//   const time = +new Date();
-//   var photo;
-//   request(
-//     `http://${ip}/web/auto.jpg?-usr=admin&-pwd=admin&`,
-//     { json: true },
-//     async (error, response, body) => {
-//       if (error) {
-//         return console.log(error);
-//       }
-//       if (!error && response.statusCode === 200) {
-//         console.log(response.statusCode);
-//         photo = response.body;
-
-//         console.log(response.body);
-
-//         //   photo = res.body;
-//       }
-//     }
-//   );
-// }
-
-async function savePhoto(photo) {
+async function savePhoto(id, photo) {
   const time = +new Date();
-  await fsPromises.writeFile(`./images/${time}.jpg`, photo, function (error) {
-    if (error) throw error;
-    console.log("Saved!");
-  });
+  await fsPromises.writeFile(
+    `./images/${id}/${time}.jpg`,
+    photo,
+    function (error) {
+      if (error) throw error;
+      console.log("Saved!");
+    }
+  );
 }
 
-var photoRequest = function (ip, callback) {
+var photoRequest = function (id, callback) {
   request(
-    `http://${ip}/web/auto.jpg?-usr=admin&-pwd=admin&`,
+    `http://${Constants.CAMERAS_IP[id]}/web/auto.jpg?-usr=admin&-pwd=admin&`,
     { json: true },
     async function (error, response, body) {
       if (!error && response.statusCode === 200) {
-        savePhoto(response.body);
+        savePhoto(id, response.body);
         status = "succeeded";
         callback(null, { status: status, photo: response.body });
       } else {
