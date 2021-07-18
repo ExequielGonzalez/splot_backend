@@ -44,7 +44,7 @@ app
   .route("/photo/:id")
   .get(async function (req, res) {
     var id = req.params.id;
-    console.log(id);
+    console.log("taking photo with ", id);
 
     photoRequest(id, function (err, result) {
       if (err) {
@@ -143,7 +143,7 @@ app
   });
 app.route("/photo/last/:id").get(async function (req, res) {
   var id = req.params.id;
-  console.log(id);
+  // console.log(id);
 
   readDir(id, function (err, result) {
     if (err) {
