@@ -48,7 +48,6 @@ app
 
     photoRequest(id, function (err, result) {
       if (err) {
-        // res.send(500, { error: "something blew up" });
         res.status(500).send({ error: "something blew up" });
       } else {
         res.send(result);
@@ -135,6 +134,19 @@ app
     }
     res.send(response);
   });
+app.route("/photo/last/:id").get(async function (req, res) {
+  var id = req.params.id;
+  console.log(id);
+
+  readDir(id, function (err, result) {
+    if (err) {
+      // res.send(500, { error: "something blew up" });
+      res.status(500).send({ error: err });
+    } else {
+      res.send(result);
+    }
+  });
+});
 app.use(function (req, res, next) {
   response = {
     error: true,
@@ -159,13 +171,58 @@ async function savePhoto(id, photo) {
   );
 }
 
+// async function readDir(id) {
+//   console.log("asdasd");
+//   const file = await fsPromises.readdir(
+//     `./images/${id}/`,
+//     async function (error, files) {
+//       if (error) {
+//         console.log("Something went wrong: ", error);
+//       }
+//       console.log("files: ", files);
+//     }
+//   );
+//   console.log(file[file.length - 1]);
+//   const photo = await fsPromises.readFile(
+//     `./images/${id}/${file[file.length - 1]}`,
+//     (err, data) => {
+//       if (err) throw err;
+//       console.log(data);
+//     }
+//   );
+//   console.log(photo);
+// }
+
+var readDir = async function (id, callback) {
+  const file = await fsPromises.readdir(
+    `./images/${id}/`,
+    async function (error, files) {
+      if (error) {
+        callback(error);
+      }
+    }
+  );
+  if (file.length !== 0) {
+    const photo = await fsPromises.readFile(
+      `./images/${id}/${file[file.length - 1]}`,
+      (error, data) => {
+        if (error) throw error;
+        callback(error);
+      }
+    );
+    callback(null, { path: file[file.length - 1], photo: photo });
+  } else {
+    callback("There is no photo to show");
+  }
+};
+
 var photoRequest = function (id, callback) {
   request(
     `http://${Constants.CAMERAS_IP[id]}/web/auto.jpg?-usr=admin&-pwd=admin&`,
     { json: true },
     async function (error, response, body) {
       if (!error && response.statusCode === 200) {
-        savePhoto(id, response.body);
+        await savePhoto(id, response.body);
         status = "succeeded";
         callback(null, { status: status, photo: response.body });
       } else {
