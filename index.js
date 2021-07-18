@@ -155,9 +155,34 @@ app.use(function (req, res, next) {
   };
   res.status(404).send(response);
 });
-app.listen(3000, "localhost", () => {
+app.listen(3000, "localhost", async () => {
+  await readDirectories();
   console.log("El servidor está inicializado en el puerto 3000");
 });
+
+async function readDirectories() {
+  try {
+    await fsPromises.readdir(`./images/`, async function (error, files) {
+      (error) => {
+        if (error) throw error;
+      };
+    });
+  } catch (e) {
+    if (e.code === "ENOENT") {
+      Object.keys(Constants.CAMERAS_IP).forEach(async (camera) => {
+        console.log(camera);
+        await fsPromises.mkdir(
+          `images/${camera}`,
+          { recursive: true },
+          (error) => {
+            if (error) throw error;
+          }
+        );
+        console.log(`Creado el directorio: /images/${camera}`);
+      });
+    }
+  }
+}
 
 async function savePhoto(id, photo) {
   const time = +new Date();
@@ -170,28 +195,6 @@ async function savePhoto(id, photo) {
     }
   );
 }
-
-// async function readDir(id) {
-//   console.log("asdasd");
-//   const file = await fsPromises.readdir(
-//     `./images/${id}/`,
-//     async function (error, files) {
-//       if (error) {
-//         console.log("Something went wrong: ", error);
-//       }
-//       console.log("files: ", files);
-//     }
-//   );
-//   console.log(file[file.length - 1]);
-//   const photo = await fsPromises.readFile(
-//     `./images/${id}/${file[file.length - 1]}`,
-//     (err, data) => {
-//       if (err) throw err;
-//       console.log(data);
-//     }
-//   );
-//   console.log(photo);
-// }
 
 var readDir = async function (id, callback) {
   const file = await fsPromises.readdir(
