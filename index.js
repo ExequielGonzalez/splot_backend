@@ -9,8 +9,8 @@ const fsPromises = require("fs").promises;
 const Constants = require("./constants.js");
 
 const app = express();
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(bodyParser.json());
+app.use(express.json({ limit: "1mb" }));
+app.use(express.urlencoded({ limit: "1mb" }));
 app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
 
@@ -55,32 +55,39 @@ app
     });
   })
   .post(function (req, res) {
-    if (!req.body.nombre || !req.body.apellido) {
-      response = {
-        error: true,
-        code: 502,
-        message: "El campo nombre y apellido son requeridos",
-      };
-    } else {
-      if (usuario.nombre !== "" || usuario.apellido !== "") {
-        response = {
-          error: true,
-          code: 503,
-          message: "El usuario ya fue creado previamente",
-        };
-      } else {
-        usuario = {
-          nombre: req.body.nombre,
-          apellido: req.body.apellido,
-        };
-        response = {
-          error: false,
-          code: 200,
-          message: "Usuario creado",
-          response: usuario,
-        };
-      }
-    }
+    // if (!req.body.nombre || !req.body.apellido) {
+    //   response = {
+    //     error: true,
+    //     code: 502,
+    //     message: "El campo nombre y apellido son requeridos",
+    //   };
+    // } else {
+    //   if (usuario.nombre !== "" || usuario.apellido !== "") {
+    //     response = {
+    //       error: true,
+    //       code: 503,
+    //       message: "El usuario ya fue creado previamente",
+    //     };
+    //   } else {
+    //     usuario = {
+    //       nombre: req.body.nombre,
+    //       apellido: req.body.apellido,
+    //     };
+    //     response = {
+    //       error: false,
+    //       code: 200,
+    //       message: "Usuario creado",
+    //       response: usuario,
+    //     };
+    //   }
+    // }
+    response = {
+      error: false,
+      code: 200,
+      message: "se supone que la imagen fue recibida",
+    };
+    // console.log(req);
+    // console.log(req);
 
     res.send(response);
   })
