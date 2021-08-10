@@ -1,12 +1,15 @@
 //npm install express --save
 const express = require("express");
 //npm install body-parser --save
-const bodyParser = require("body-parser");
+// const bodyParser = require("body-parser");
 // npm i request
 const request = require("request").defaults({ encoding: null });
 const fsPromises = require("fs").promises;
 
 const Constants = require("./constants.js");
+
+const HOST = "0.0.0.0";
+const PORT = 3000;
 
 const app = express();
 app.use(express.json({ limit: "1mb" }));
@@ -23,15 +26,6 @@ app.use((req, res, next) => {
   next();
 });
 
-let usuario = {
-  nombre: "",
-  apellido: "",
-};
-let response = {
-  error: false,
-  code: 200,
-  message: "",
-};
 app.get("/", function (req, res) {
   response = {
     error: true,
@@ -48,7 +42,7 @@ app
 
     photoRequest(id, function (err, result) {
       if (err) {
-        res.status(500).send({ error: "something blew up" });
+        res.status(500).send({ error: "something blew up " });
       } else {
         res.send(result);
       }
@@ -162,9 +156,9 @@ app.use(function (req, res, next) {
   };
   res.status(404).send(response);
 });
-app.listen(3000, "localhost", async () => {
+app.listen(PORT, HOST, async () => {
   await readDirectories();
-  console.log("El servidor está inicializado en el puerto 3000");
+  console.log("Server started on port", PORT);
 });
 
 async function readDirectories() {
