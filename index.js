@@ -49,32 +49,6 @@ app
     });
   })
   .post(function (req, res) {
-    // if (!req.body.nombre || !req.body.apellido) {
-    //   response = {
-    //     error: true,
-    //     code: 502,
-    //     message: "El campo nombre y apellido son requeridos",
-    //   };
-    // } else {
-    //   if (usuario.nombre !== "" || usuario.apellido !== "") {
-    //     response = {
-    //       error: true,
-    //       code: 503,
-    //       message: "El usuario ya fue creado previamente",
-    //     };
-    //   } else {
-    //     usuario = {
-    //       nombre: req.body.nombre,
-    //       apellido: req.body.apellido,
-    //     };
-    //     response = {
-    //       error: false,
-    //       code: 200,
-    //       message: "Usuario creado",
-    //       response: usuario,
-    //     };
-    //   }
-    // }
     response = {
       error: false,
       code: 200,
