@@ -6,14 +6,13 @@ const express = require("express");
 const request = require("request").defaults({ encoding: null });
 const fsPromises = require("fs").promises;
 
-const Constants = require("./constants.js");
-
 const HOST = "0.0.0.0";
 const PORT = 3000;
+let cameraData = {};
 
 const app = express();
 app.use(express.json({ limit: "1mb" }));
-app.use(express.urlencoded({ limit: "1mb" }));
+// app.use(express.urlencoded({ limit: "1mb" }));
 app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
 
@@ -34,30 +33,19 @@ app.get("/", function (req, res) {
   };
   res.send(response);
 });
-app
-  .route("/api/photo/:id")
-  .get(async function (req, res) {
-    var id = req.params.id;
-    console.log("taking photo with ", id);
+app.route("/api/photo/:id").get(async function (req, res) {
+  var id = req.params.id;
+  console.log("taking photo with ", id);
 
-    photoRequest(id, function (err, result) {
-      if (err) {
-        console.log(err);
-        res.status(500).send({ error: err });
-      } else {
-        res.send(result);
-      }
-    });
-  })
-  .post(function (req, res) {
-    response = {
-      error: false,
-      code: 200,
-      message: "se supone que la imagen fue recibida",
-    };
-
-    res.send(response);
+  photoRequest(id, function (err, result) {
+    if (err) {
+      console.log(err);
+      res.status(500).send(err);
+    } else {
+      res.send(result);
+    }
   });
+});
 app.route("/api/photo/last/:id").get(async function (req, res) {
   var id = req.params.id;
 
@@ -78,32 +66,64 @@ app.use(function (req, res, next) {
   res.status(404).send(response);
 });
 app.listen(PORT, HOST, async () => {
+  await readCamerasFile();
   await readDirectories();
   console.log("Server started on port", PORT);
 });
 
+async function readCamerasFile() {
+  try {
+    const file = await fsPromises.readFile(
+      "./config/cameras-ip.json",
+      "utf-8",
+      async function (error, data) {
+        (error) => {
+          throw error;
+        };
+      }
+    );
+    cameraData = JSON.parse(file);
+  } catch (e) {
+    console.log("There is not 'cameras-ip.json' file. ", e);
+  }
+}
+
 async function readDirectories() {
   try {
-    await fsPromises.readdir(`./images/`, async function (error, files) {
-      (error) => {
-        if (error) throw error;
-      };
-    });
+    const read = await fsPromises.readdir(
+      `./images/`,
+      async function (error, files) {
+        (error) => {
+          if (error) throw error;
+        };
+      }
+    );
+    if (read.length === 0) createDirectory();
   } catch (e) {
-    if (e.code === "ENOENT") {
-      Object.keys(Constants.CAMERAS_IP).forEach(async (camera) => {
-        console.log(camera);
-        await fsPromises.mkdir(
-          `images/${camera}`,
-          { recursive: true },
-          (error) => {
-            if (error) throw error;
-          }
-        );
-        console.log(`Creado el directorio: /images/${camera}`);
-      });
+    console.log(e);
+    if (e.code === "ENOENT" || e.code === "ENOTDIR") {
+      try {
+        createDirectory();
+      } catch (e) {
+        console.log(e);
+      }
     }
   }
+}
+
+async function createDirectory() {
+  console.log("objeto con las camaras", cameraData);
+  Object.keys(cameraData).forEach(async (camera) => {
+    console.log("aca debería crear las carpetas", camera);
+    await fsPromises.mkdir(
+      `./images/${camera}`,
+      { recursive: true },
+      (error) => {
+        if (error) throw error;
+      }
+    );
+    console.log(`Creado el directorio: /images/${camera}`);
+  });
 }
 
 async function savePhoto(id, photo) {
@@ -141,16 +161,15 @@ var readDir = async function (id, callback) {
 
 var photoRequest = function (id, callback) {
   request(
-    `http://${Constants.CAMERAS_IP[id]}/web/auto.jpg?-usr=admin&-pwd=admin&`,
+    `http://${cameraData[id]}/web/auto.jpg?-usr=admin&-pwd=admin&`,
     { json: true },
     async function (error, response, body) {
       if (!error && response.statusCode === 200) {
         const photoName = await savePhoto(id, response.body);
-        console.log("photoname: ", photoName);
         status = "succeeded";
         callback(null, { status: status, photo: photoName });
       } else {
-        callback(error);
+        callback({ status: "error", error: error });
       }
     }
   );
