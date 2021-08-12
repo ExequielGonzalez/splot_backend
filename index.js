@@ -35,14 +35,15 @@ app.get("/", function (req, res) {
   res.send(response);
 });
 app
-  .route("/photo/:id")
+  .route("/api/photo/:id")
   .get(async function (req, res) {
     var id = req.params.id;
     console.log("taking photo with ", id);
 
     photoRequest(id, function (err, result) {
       if (err) {
-        res.status(500).send({ error: "something blew up " });
+        console.log(err);
+        res.status(500).send({ error: err });
       } else {
         res.send(result);
       }
@@ -54,68 +55,14 @@ app
       code: 200,
       message: "se supone que la imagen fue recibida",
     };
-    // console.log(req);
-    // console.log(req);
 
-    res.send(response);
-  })
-  .put(function (req, res) {
-    if (!req.body.nombre || !req.body.apellido) {
-      response = {
-        error: true,
-        code: 502,
-        message: "El campo nombre y apellido son requeridos",
-      };
-    } else {
-      if (usuario.nombre === "" || usuario.apellido === "") {
-        response = {
-          error: true,
-          code: 501,
-          message: "El usuario no ha sido creado",
-        };
-      } else {
-        usuario = {
-          nombre: req.body.nombre,
-          apellido: req.body.apellido,
-        };
-        response = {
-          error: false,
-          code: 200,
-          message: "Usuario actualizado",
-          response: usuario,
-        };
-      }
-    }
-
-    res.send(response);
-  })
-  .delete(function (req, res) {
-    if (usuario.nombre === "" || usuario.apellido === "") {
-      response = {
-        error: true,
-        code: 501,
-        message: "El usuario no ha sido creado",
-      };
-    } else {
-      response = {
-        error: false,
-        code: 200,
-        message: "Usuario eliminado",
-      };
-      usuario = {
-        nombre: "",
-        apellido: "",
-      };
-    }
     res.send(response);
   });
-app.route("/photo/last/:id").get(async function (req, res) {
+app.route("/api/photo/last/:id").get(async function (req, res) {
   var id = req.params.id;
-  // console.log(id);
 
   readDir(id, function (err, result) {
     if (err) {
-      // res.send(500, { error: "something blew up" });
       res.status(500).send({ error: err });
     } else {
       res.send(result);
@@ -161,14 +108,12 @@ async function readDirectories() {
 
 async function savePhoto(id, photo) {
   const time = +new Date();
-  await fsPromises.writeFile(
-    `./images/${id}/${time}.jpg`,
-    photo,
-    function (error) {
-      if (error) throw error;
-      console.log("Saved!");
-    }
-  );
+  const photoName = `./images/${id}/${time}.jpg`;
+  await fsPromises.writeFile(photoName, photo, function (error) {
+    if (error) throw error;
+    console.log("Saved!");
+  });
+  return { camera: id, name: `${time}.jpg` };
 }
 
 var readDir = async function (id, callback) {
@@ -200,9 +145,10 @@ var photoRequest = function (id, callback) {
     { json: true },
     async function (error, response, body) {
       if (!error && response.statusCode === 200) {
-        await savePhoto(id, response.body);
+        const photoName = await savePhoto(id, response.body);
+        console.log("photoname: ", photoName);
         status = "succeeded";
-        callback(null, { status: status, photo: response.body });
+        callback(null, { status: status, photo: photoName });
       } else {
         callback(error);
       }
