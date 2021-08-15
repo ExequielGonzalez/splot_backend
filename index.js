@@ -42,6 +42,7 @@ app.route("/api/photo/:id").get(async function (req, res) {
       console.log(err);
       res.status(500).send(err);
     } else {
+      console.log(result);
       res.send(result);
     }
   });
