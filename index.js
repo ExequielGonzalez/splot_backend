@@ -8,7 +8,7 @@ const fsPromises = require("fs").promises;
 
 const HOST = "0.0.0.0";
 const PORT = 3000;
-let cameraData = {};
+let cameraData = [];
 
 const app = express();
 app.use(express.json({ limit: "1mb" }));
@@ -36,8 +36,10 @@ app.get("/", function (req, res) {
 app.route("/api/photo/:id").get(async function (req, res) {
   var id = req.params.id;
   console.log("taking photo with ", id);
-
-  photoRequest(id, function (err, result) {
+  console.log(cameraData);
+  const camera = cameraData.find((cam) => cam.name === id);
+  console.log(camera);
+  photoRequest(camera.name, camera.ip, function (err, result) {
     if (err) {
       console.log(err);
       res.status(500).send(err);
@@ -67,7 +69,7 @@ app.use(function (req, res, next) {
   res.status(404).send(response);
 });
 app.listen(PORT, HOST, async () => {
-  await readCamerasFile();
+  await readCamerasData((response) => (cameraData = response));
   await readDirectories();
   console.log("Server started on port", PORT);
 });
@@ -87,6 +89,24 @@ async function readCamerasFile() {
   } catch (e) {
     console.log("There is not 'cameras-ip.json' file. ", e);
   }
+}
+
+async function readCamerasData(callback) {
+  request(
+    "http://backend-db:5000/api/v1/cameras",
+    { json: true },
+    async function (error, response, body) {
+      if (!error && response.statusCode === 200) {
+        console.log(body);
+        //  const photoName = await savePhoto(id, response.body);
+        //  status = "succeeded";
+        callback(body);
+      } else {
+        callback({ status: "error", error: error });
+        console.log("error");
+      }
+    }
+  );
 }
 
 async function readDirectories() {
@@ -113,28 +133,32 @@ async function readDirectories() {
 }
 
 async function createDirectory() {
-  console.log("objeto con las camaras", cameraData);
-  Object.keys(cameraData).forEach(async (camera) => {
-    console.log("aca debería crear las carpetas", camera);
-    await fsPromises.mkdir(
-      `./images/${camera}`,
-      { recursive: true },
-      (error) => {
-        if (error) throw error;
-      }
-    );
-    console.log(`Creado el directorio: /images/${camera}`);
+  // console.log("objeto con las camaras", cameraData);
+  // Object.keys(cameraData).forEach(async (camera) => {
+  //   console.log("aca debería crear las carpetas", camera);
+  //   await fsPromises.mkdir(
+  //     `./images/${camera}`,
+  //     { recursive: true },
+  //     (error) => {
+  //       if (error) throw error;
+  //     }
+  //   );
+  //   console.log(`Creado el directorio: /images/${camera}`);
+  // });
+  await fsPromises.mkdir("./images/", { recursive: true }, (error) => {
+    if (error) throw error;
   });
+  console.log("PATH created: ./images/");
 }
 
-async function savePhoto(id, photo) {
+async function savePhoto(camera, photo) {
   const time = +new Date();
-  const photoName = `./images/${id}/${time}.jpg`;
+  const photoName = `./images/${camera}-${time}.jpg`;
   await fsPromises.writeFile(photoName, photo, function (error) {
     if (error) throw error;
     console.log("Saved!");
   });
-  return { camera: id, name: `${time}.jpg` };
+  return { camera: camera, name: `${camera}-${time}.jpg` };
 }
 
 var readDir = async function (id, callback) {
@@ -160,13 +184,13 @@ var readDir = async function (id, callback) {
   }
 };
 
-var photoRequest = function (id, callback) {
+var photoRequest = function (cameraName, ip, callback) {
   request(
-    `http://${cameraData[id]}/web/auto.jpg?-usr=admin&-pwd=admin&`,
+    `http://${ip}/web/auto.jpg?-usr=admin&-pwd=admin&`,
     { json: true },
     async function (error, response, body) {
       if (!error && response.statusCode === 200) {
-        const photoName = await savePhoto(id, response.body);
+        const photoName = await savePhoto(cameraName, response.body);
         status = "succeeded";
         callback(null, { status: status, photo: photoName });
       } else {
@@ -175,3 +199,4 @@ var photoRequest = function (id, callback) {
     }
   );
 };
+
