@@ -158,7 +158,11 @@ async function savePhoto(camera, photo) {
     if (error) throw error;
     console.log("Saved!");
   });
-  return { camera: camera, name: `${camera}-${time}.jpg` };
+  return {
+    camera: camera,
+    cameraId: cameraData.find((cam) => cam.name === camera).id,
+    name: `${camera}-${time}.jpg`,
+  };
 }
 
 var readDir = async function (id, callback) {
@@ -199,4 +203,3 @@ var photoRequest = function (cameraName, ip, callback) {
     }
   );
 };
-
