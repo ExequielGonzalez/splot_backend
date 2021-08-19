@@ -167,7 +167,7 @@ async function savePhoto(camera, photo) {
 
 var readDir = async function (id, callback) {
   const file = await fsPromises.readdir(
-    `./images/${id}/`,
+    `./images/`,
     async function (error, files) {
       if (error) {
         callback(error);
@@ -176,7 +176,7 @@ var readDir = async function (id, callback) {
   );
   if (file.length !== 0) {
     const photo = await fsPromises.readFile(
-      `./images/${id}/${file[file.length - 1]}`,
+      `./images/${file[file.length - 1]}`,
       (error, data) => {
         if (error) throw error;
         callback(error);
