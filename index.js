@@ -1,5 +1,6 @@
 //npm install express --save
 const express = require("express");
+
 //npm install body-parser --save
 // const bodyParser = require("body-parser");
 // npm i request
@@ -69,7 +70,9 @@ app.use(function (req, res, next) {
   res.status(404).send(response);
 });
 app.listen(PORT, HOST, async () => {
-  await readCamerasData((response) => (cameraData = response));
+  await readCamerasData((response) => {
+    cameraData = response;
+  });
   await readDirectories();
   console.log("Server started on port", PORT);
 });
